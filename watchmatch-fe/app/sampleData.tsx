@@ -26,6 +26,26 @@ const sampleData: Movie[] = [
     title: "The Matrix",
     director: "The Wachowskis",
   },
+  {
+    id: "6",
+    title: "Goodfellas",
+    director: "Martin Scorsese",
+  },
+  {
+    id: "7",
+    title: "Little Women",
+    director: "Greta Gerwig",
+  },
+  {
+    id: "8",
+    title: "The Hurt Locker",
+    director: "Kathryn Bigelow",
+  },
+  {
+    id: "9",
+    title: "Promising Young Woman",
+    director: "Emerald Fennell",
+  },
 ];
 
 export { sampleData };

@@ -36,17 +36,18 @@ const SearchBarComponent = ({
         backgroundColor: "white", // Background color of the container
         borderTopWidth: 0, // Remove top border
         borderBottomWidth: 0, // Remove bottom border
-        padding: 10, // Padding around the container
+        padding: 5, // Padding around the container
         borderColor: "black", // Border color
       }}
       inputContainerStyle={{
         backgroundColor: "lightgrey", // Background color of the input container
         borderRadius: 10, // Rounded corners for the input container
+        padding: 5, // Padding inside the input container
       }}
       inputStyle={{
         backgroundColor: "white", // Background color of the input field
         borderRadius: 10, // Rounded corners for the input field
-        padding: 10, // Padding inside the input field
+        padding: 5, // Padding inside the input field
       }}
       cancelIcon={{ size: 24, color: "black" }} // Style for the cancel icon
       showLoading={false}
