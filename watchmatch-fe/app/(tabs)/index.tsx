@@ -7,12 +7,18 @@ import {
   Pressable,
   Image,
   ScrollView,
+  TextInput,
 } from "react-native";
 import { Movie } from "../types";
 import { sampleData } from "../sampleData";
-import { RadioButton } from "../radioButtonComponent";
+import { RadioButton } from "../components/radioButtonComponent";
 import { Rating } from "react-native-elements";
-import { SearchBarComponent } from "../searchBarComponent";
+import { SearchBarComponent } from "../components/searchBarComponent";
+
+// Importing a sample movie poster image
+const moviePoster = require(`./../Qak6WgQOSX-cJatV9PnxVQ.png`);
+// Default review text
+const defaultReviewText = "Write your review here...";
 
 export default function MovieSearchScreen() {
   // State to manage the filtered data and search input
@@ -29,8 +35,8 @@ export default function MovieSearchScreen() {
   const [toWatch, setToWatch] = useState(false);
   // Number to manage movie rating
   const [rating, setRating] = useState(0);
-  // Importing a sample movie poster image
-  const moviePoster = require(`./../Qak6WgQOSX-cJatV9PnxVQ.png`);
+  // State to manage the review of the movie
+  const [reviewText, setReviewText] = useState(defaultReviewText);
 
   return (
     <View
@@ -68,6 +74,7 @@ export default function MovieSearchScreen() {
                 setIsWatched(false);
                 setToWatch(false);
                 setRating(0);
+                setReviewText(defaultReviewText);
               }}
             >
               <View style={styles.item}>
@@ -132,6 +139,20 @@ export default function MovieSearchScreen() {
                 onFinishRating={setRating}
                 style={{ marginTop: 10 }}
               ></Rating>
+              <TextInput
+                placeholder={defaultReviewText}
+                onChangeText={setReviewText}
+                value={reviewText}
+                style={{
+                  height: 100,
+                  width: 200,
+                  borderColor: "gray",
+                  borderWidth: 1,
+                  marginTop: 10,
+                  padding: 10,
+                  textAlignVertical: "top",
+                }}
+              ></TextInput>
             </View>
             <Image source={moviePoster} style={styles.poster}></Image>
           </View>
@@ -166,8 +187,8 @@ const styles = StyleSheet.create({
     fontSize: 18, // Font size for the text
   },
   poster: {
-    height: 400,
-    width: 200,
+    height: 500,
+    width: 250,
     resizeMode: "contain",
   },
   button: {

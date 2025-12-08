@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Button, Text, View, Image, StyleSheet } from "react-native";
+import {
+  Button,
+  Text,
+  View,
+  Image,
+  StyleSheet,
+  TouchableHighlight,
+} from "react-native";
 import { Movie } from "../types";
 import { sampleData } from "../sampleData";
 
@@ -26,12 +33,25 @@ export default function ReccomendationScreen() {
         <Text style={{ fontSize: 32, marginBottom: 20 }}>
           Get your Movie Reccomendation
         </Text>
-        <Button
+        <TouchableHighlight
           onPress={generateMovieReccomendations}
-          title="Click here"
-          color="green"
-          accessibilityLabel="Learn more about this purple button"
-        />
+          style={{
+            borderRadius: 20,
+            padding: 10,
+            backgroundColor: "lightgreen",
+            marginTop: 10,
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontWeight: "bold",
+              fontSize: 16,
+            }}
+          >
+            Click here
+          </Text>
+        </TouchableHighlight>
       </View>
       {selectedMovie && (
         <View style={{ marginTop: 30 }}>

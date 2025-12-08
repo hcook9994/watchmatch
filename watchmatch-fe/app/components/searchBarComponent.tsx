@@ -1,6 +1,6 @@
 import { SearchBar } from "react-native-elements";
-import { Movie } from "./types";
-import { sampleData } from "./sampleData";
+import { Movie } from "../types";
+import { sampleData } from "../sampleData";
 
 const SearchBarComponent = ({
   searchValue,
