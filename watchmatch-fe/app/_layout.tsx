@@ -6,6 +6,7 @@ import { LoginModal } from "./components/loginModalComponent";
 export default function RootLayout() {
   // State to manage the login modal visibility
   const [login, setLogin] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
   return (
     <Stack>
       <Stack.Screen
@@ -15,9 +16,10 @@ export default function RootLayout() {
             <View>
               <TouchableHighlight
                 onPress={() => setLogin(true)}
+                disabled={loggedIn}
                 style={{
                   marginRight: 15,
-                  backgroundColor: "lightgreen",
+                  backgroundColor: loggedIn ? "grey" : "lightgreen",
                   borderRadius: 20,
                   padding: 10,
                   width: 100,
@@ -30,10 +32,14 @@ export default function RootLayout() {
                     color: "black",
                   }}
                 >
-                  Login
+                  {loggedIn ? "Logged in" : "Login"}
                 </Text>
               </TouchableHighlight>
-              <LoginModal login={login} onPress={() => setLogin(false)} />
+              <LoginModal
+                login={login}
+                exitLoginScreen={() => setLogin(false)}
+                setLoggedIn={setLoggedIn}
+              />
             </View>
           ),
         }}

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Text,
   View,
@@ -9,11 +10,38 @@ import {
 
 type Props = {
   login: boolean;
-  onPress: () => void;
+  exitLoginScreen: () => void;
+  setLoggedIn: (loggedIn: boolean) => void;
 };
 
+type LoginStatus = "true" | "false" | "error";
+
+// Dummy authentication function
+function loginAuthentication(
+  username: string,
+  password: string,
+  setLoginStatus: (status: LoginStatus) => void,
+  exitLoginScreen: () => void,
+  setLoggedIn: (loggedIn: boolean) => void
+) {
+  // Placeholder for actual authentication logic
+  setLoginStatus(username === "user" && password === "pass" ? "true" : "error");
+  if (username === "user" && password === "pass") {
+    // After 1 second, run your function
+    setTimeout(() => {
+      exitLoginScreen();
+      setLoggedIn(true);
+    }, 1000);
+  }
+  return;
+}
+
 const LoginModal = (props: Props) => {
-  const { login, onPress } = props;
+  const { login, exitLoginScreen, setLoggedIn } = props;
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginStatus, setLoginStatus] = useState("false");
 
   return (
     <Modal visible={login} transparent={false}>
@@ -40,7 +68,11 @@ const LoginModal = (props: Props) => {
           }}
         >
           <Text>Username: </Text>
-          <TextInput style={styles.textInput}></TextInput>
+          <TextInput
+            style={styles.textInput}
+            value={username}
+            onChangeText={setUsername}
+          ></TextInput>
         </View>
         <View
           style={{
@@ -50,14 +82,39 @@ const LoginModal = (props: Props) => {
           }}
         >
           <Text>Password: </Text>
-          <TextInput style={styles.textInput}></TextInput>
+          <TextInput
+            style={styles.textInput}
+            value={password}
+            onChangeText={setPassword}
+          ></TextInput>
         </View>
-        <TouchableHighlight onPress={() => () => {}} style={styles.button}>
+        {loginStatus === "error" && (
+          <Text style={{ color: "red", marginBottom: 10, marginTop: 10 }}>
+            Incorrect username or password.
+          </Text>
+        )}
+        <TouchableHighlight
+          onPress={() => {
+            loginAuthentication(
+              username,
+              password,
+              setLoginStatus,
+              exitLoginScreen,
+              setLoggedIn
+            );
+          }}
+          style={styles.button}
+        >
           <Text>Submit</Text>
         </TouchableHighlight>
-        <TouchableHighlight onPress={onPress} style={styles.button}>
+        <TouchableHighlight onPress={exitLoginScreen} style={styles.button}>
           <Text>Cancel</Text>
         </TouchableHighlight>
+        {loginStatus === "true" && (
+          <Text style={{ color: "green", marginBottom: 10, marginTop: 10 }}>
+            Successfully logged in!
+          </Text>
+        )}
       </View>
     </Modal>
   );
