@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableHighlight,
 } from "react-native";
+import { loginApi } from "../api";
 
 type Props = {
   login: boolean;
@@ -17,15 +18,19 @@ type Props = {
 type LoginStatus = "true" | "false" | "error";
 
 // Dummy authentication function
-function loginAuthentication(
+async function loginAuthentication(
   username: string,
   password: string,
   setLoginStatus: (status: LoginStatus) => void,
   exitLoginScreen: () => void,
   setLoggedIn: (loggedIn: boolean) => void
 ) {
+  console.log("start loginAuthentication");
   // Placeholder for actual authentication logic
   setLoginStatus(username === "user" && password === "pass" ? "true" : "error");
+  //API Call
+  const response = await loginApi("placeHolderName"); //Do I need to await this?
+  console.log("response here: ", response);
   if (username === "user" && password === "pass") {
     // After 1 second, run your function
     setTimeout(() => {

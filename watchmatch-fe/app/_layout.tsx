@@ -7,6 +7,7 @@ export default function RootLayout() {
   // State to manage the login modal visibility
   const [login, setLogin] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
+
   return (
     <Stack>
       <Stack.Screen
@@ -15,7 +16,9 @@ export default function RootLayout() {
           headerRight: () => (
             <View>
               <TouchableHighlight
-                onPress={() => setLogin(true)}
+                onPress={() => {
+                  setLogin(true);
+                }}
                 disabled={loggedIn}
                 style={{
                   marginRight: 15,
