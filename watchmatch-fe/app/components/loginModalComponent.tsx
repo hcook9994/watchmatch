@@ -7,49 +7,52 @@ import {
   StyleSheet,
   TouchableHighlight,
 } from "react-native";
-import { loginApi } from "../api";
+import { login } from "../api";
+import { CreateUserModal } from "./createUserModalComponent";
 
 type Props = {
-  login: boolean;
+  loginScreen: boolean;
   exitLoginScreen: () => void;
   setLoggedIn: (loggedIn: boolean) => void;
+  username: string;
+  setUsername: (username: string) => void;
+  setUserId: (userId: string) => void;
 };
 
-type LoginStatus = "true" | "false" | "error";
-
-// Dummy authentication function
-async function loginAuthentication(
-  username: string,
-  password: string,
-  setLoginStatus: (status: LoginStatus) => void,
-  exitLoginScreen: () => void,
-  setLoggedIn: (loggedIn: boolean) => void
-) {
-  console.log("start loginAuthentication");
-  // Placeholder for actual authentication logic
-  setLoginStatus(username === "user" && password === "pass" ? "true" : "error");
-  //API Call
-  const response = await loginApi("placeHolderName"); //Do I need to await this?
-  console.log("response here: ", response);
-  if (username === "user" && password === "pass") {
-    // After 1 second, run your function
-    setTimeout(() => {
-      exitLoginScreen();
-      setLoggedIn(true);
-    }, 1000);
-  }
-  return;
-}
-
 const LoginModal = (props: Props) => {
-  const { login, exitLoginScreen, setLoggedIn } = props;
+  const {
+    loginScreen,
+    exitLoginScreen,
+    setLoggedIn,
+    username,
+    setUsername,
+    setUserId,
+  } = props;
 
-  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  // Set variables to track login status
+  const [createUserInProgress, setCreateUserInProgress] = useState(false);
   const [loginStatus, setLoginStatus] = useState("false");
 
+  async function loginAuthentication() {
+    const response = await login(username, password);
+    if (response.status === 200) {
+      setLoginStatus("true");
+      // TODO: remove time delay
+      setTimeout(() => {
+        exitLoginScreen();
+        setLoggedIn(true);
+        setUserId(response.data.userId);
+      }, 1000);
+    } else {
+      setLoginStatus("error");
+    }
+    return;
+  }
+
   return (
-    <Modal visible={login} transparent={false}>
+    <Modal visible={loginScreen} transparent={false}>
       <View
         style={{
           flex: 1,
@@ -99,21 +102,21 @@ const LoginModal = (props: Props) => {
           </Text>
         )}
         <TouchableHighlight
-          onPress={() => {
-            loginAuthentication(
-              username,
-              password,
-              setLoginStatus,
-              exitLoginScreen,
-              setLoggedIn
-            );
+          onPress={async () => {
+            await loginAuthentication();
           }}
           style={styles.button}
         >
-          <Text>Submit</Text>
+          <Text>Login</Text>
         </TouchableHighlight>
         <TouchableHighlight onPress={exitLoginScreen} style={styles.button}>
           <Text>Cancel</Text>
+        </TouchableHighlight>
+        <TouchableHighlight
+          onPress={() => setCreateUserInProgress(true)}
+          style={styles.button}
+        >
+          <Text>Create New User</Text>
         </TouchableHighlight>
         {loginStatus === "true" && (
           <Text style={{ color: "green", marginBottom: 10, marginTop: 10 }}>
@@ -121,6 +124,10 @@ const LoginModal = (props: Props) => {
           </Text>
         )}
       </View>
+      <CreateUserModal
+        createUserInProgress={createUserInProgress}
+        exitUserCreationsScreen={() => setCreateUserInProgress(false)}
+      />
     </Modal>
   );
 };
