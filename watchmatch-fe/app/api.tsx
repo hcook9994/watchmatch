@@ -26,6 +26,7 @@ export async function createUser(
   }
 }
 
+//TODO: should this be a POST?
 export async function login(username: string, password: string) {
   try {
     const response = await fetch("http://localhost:3000/login/", {
@@ -36,6 +37,51 @@ export async function login(username: string, password: string) {
       method: "POST",
       body: JSON.stringify({ username, password }),
     });
+
+    if (response.status === 200) {
+      const responseData = await response.json();
+      return { data: responseData, status: 200 };
+    } else {
+      return { message: "The server denied our request.", status: 500 };
+    }
+  } catch (e) {
+    return { message: "Failed fetching from the API", status: 500 };
+  }
+}
+
+export async function getPopularMovies() {
+  try {
+    const response = await fetch("http://localhost:3000/popular_movies/", {
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+    });
+
+    if (response.status === 200) {
+      const responseData = await response.json();
+      return { data: responseData, status: 200 };
+    } else {
+      return { message: "The server denied our request.", status: 500 };
+    }
+  } catch (e) {
+    return { message: "Failed fetching from the API", status: 500 };
+  }
+}
+
+export async function searchMovies(searchString: string) {
+  try {
+    const response = await fetch(
+      `http://localhost:3000/search_movies?search_string=${searchString}`,
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      }
+    );
 
     if (response.status === 200) {
       const responseData = await response.json();

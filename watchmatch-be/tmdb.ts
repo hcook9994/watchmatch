@@ -1,0 +1,5 @@
+// TODO: process.env.{}
+
+export const tmdbAPIKey = "59a2470df503f50c9fd17b381c83a608";
+export const tmdbAccessToken =
+  "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI1OWEyNDcwZGY1MDNmNTBjOWZkMTdiMzgxYzgzYTYwOCIsIm5iZiI6MTc2NjU1MTAxMy4yNjU5OTk4LCJzdWIiOiI2OTRiNmRlNTNkOTEzMzQ5NzcxNTYzMjMiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.YOZJPT4-oseo7oCYLVABwX2gM45hwChyCwIK20iX3sM";

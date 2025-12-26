@@ -7,7 +7,7 @@ import { z } from "zod";
 
 // TODO: separate type file
 const zUser = z.object({
-  id: z.number(),
+  user_id: z.number(),
   username: z.string(),
   email: z.string(), // define specific validation for email
   password: z.string(),
@@ -17,7 +17,7 @@ const zUser = z.object({
 type User = z.infer<typeof zUser>;
 
 // Create a new user
-export const createUser = async (
+export const createUserDB = async (
   username: string,
   email: string,
   password: string
@@ -35,7 +35,6 @@ export const createUser = async (
 };
 
 // Retrieve user by username
-// TODO: Define return type
 export const getUserByName = async (username: string): Promise<User | null> => {
   try {
     const getUserQuery = "SELECT * FROM users WHERE username = $1";

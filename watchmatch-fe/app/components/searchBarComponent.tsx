@@ -1,6 +1,7 @@
 import { SearchBar } from "react-native-elements";
-import { Movie } from "../types";
-import { sampleData } from "../sampleData";
+import { Movie } from "../../../watchmatch-be/connectors/tmdb";
+import { useEffect } from "react";
+import { searchMovies } from "../api";
 
 const SearchBarComponent = ({
   searchValue,
@@ -11,23 +12,22 @@ const SearchBarComponent = ({
   setData: (data: Movie[]) => void;
   setSearchValue: (text: string) => void;
 }) => {
-  // Function to handle search functionality
-  const searchFunction = (text?: string): void => {
-    text = text || "";
-    const updatedData = sampleData.filter((item) => {
-      const itemData = item.title.toUpperCase(); // Convert item title to uppercase
-      const textData = text.toUpperCase(); // Convert search text to uppercase
-      return itemData.includes(textData); // Check if item title includes the search text
-    });
-    setData(updatedData); // Update the filtered data
-    setSearchValue(text); // Update the search value
-  };
+  useEffect(() => {
+    if (!searchValue.trim()) return;
+
+    const timeout = setTimeout(async () => {
+      const results = await searchMovies(searchValue);
+      setData(results.data.data);
+    }, 400);
+
+    return () => clearTimeout(timeout);
+  }, [searchValue, setData]);
 
   return (
     <SearchBar
       placeholder="Search Here..." // Placeholder text for the search bar
       value={searchValue} // Bind the search value to the state
-      onChangeText={searchFunction} // Call searchFunction on text change
+      onChangeText={(text?: string) => setSearchValue(text || "")} // Call searchFunction on text change
       lightTheme // Use light theme for the search bar
       round // Make the search bar round
       autoCorrect={false} // Disable auto-correct

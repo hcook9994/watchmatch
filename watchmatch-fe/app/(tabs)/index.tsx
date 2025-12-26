@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -9,20 +9,19 @@ import {
   ScrollView,
   TextInput,
 } from "react-native";
-import { Movie } from "../types";
-import { sampleData } from "../sampleData";
 import { RadioButton } from "../components/radioButtonComponent";
 import { Rating } from "react-native-elements";
 import { SearchBarComponent } from "../components/searchBarComponent";
+import { getPopularMovies, searchMovies } from "../api";
+import { Movie } from "../../../watchmatch-be/connectors/tmdb";
+import alert from "../../helper/alert";
 
-// Importing a sample movie poster image
-const moviePoster = require(`./../Qak6WgQOSX-cJatV9PnxVQ.png`);
 // Default review text
 const defaultReviewText = "Write your review here...";
 
 export default function MovieSearchScreen() {
   // State to manage the filtered data and search input
-  const [data, setData] = useState(sampleData);
+  const [data, setData] = useState<Movie[]>([]);
   // State to manage the search input value
   const [searchValue, setSearchValue] = useState("");
   // State to manage modal visibility
@@ -37,6 +36,48 @@ export default function MovieSearchScreen() {
   const [rating, setRating] = useState(0);
   // State to manage the review of the movie
   const [reviewText, setReviewText] = useState(defaultReviewText);
+
+  function submitReview(inputs: { movieId: number }) {
+    // TODO: Check user is loggedIn
+
+    // If movie is watched, the assert values
+    if (isWatched) {
+      // Movie needs rating for models
+      if (!rating) {
+        setTimeout(() => {
+          alert(
+            "Invalid review",
+            "Please provide a rating for a watched movie.",
+            []
+          );
+        }, 100);
+        return;
+      }
+      // Call first API - watched
+    } else {
+      if (!rating) {
+        alert("Invalid selection", "No valid inputs provided.", []);
+        return;
+      }
+      // Call second API - watchlist
+    }
+  }
+
+  // Query TMDB to get searched movies or popular movies
+  useEffect(() => {
+    const timeout = setTimeout(async () => {
+      if (!searchValue.trim()) {
+        const defaultResults = await getPopularMovies();
+        setData(defaultResults.data.data);
+        return;
+      }
+
+      const results = await searchMovies(searchValue);
+      setData(results.data.data);
+    }, 400);
+
+    return () => clearTimeout(timeout);
+  }, [searchValue]);
 
   return (
     <View
@@ -87,81 +128,123 @@ export default function MovieSearchScreen() {
 
       {rightTabVisible && (
         <View style={styles.rightTab}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <View style={{ marginRight: 80 }}>
-              <Text style={{ fontSize: 20, marginBottom: 20 }}>
-                {selectedMovie ? `${selectedMovie.title}` : "N/A"}
-              </Text>
-              <Text style={{ fontSize: 14, marginBottom: 10 }}>
-                {selectedMovie ? `Director: ${selectedMovie.director}` : "N/A"}
-              </Text>
+          <ScrollView>
+            <View
+              style={{
+                flexDirection: "row",
+                marginBottom: 20,
+              }}
+            >
               <View
                 style={{
-                  flexDirection: "row",
+                  marginRight: 80,
+                  width: "50%",
                   alignItems: "center",
-                  marginTop: 10,
+                  alignContent: "center",
                 }}
               >
-                <View
+                <Text style={{ fontSize: 20, marginBottom: 20 }}>
+                  {selectedMovie ? `${selectedMovie.title}` : "N/A"}
+                </Text>
+                <Text
                   style={{
-                    alignItems: "center",
-                    marginRight: 20,
+                    fontSize: 14,
+                    marginBottom: 10,
+                    padding: 10,
                   }}
                 >
-                  <Text style={{ marginBottom: 5 }}>Watched</Text>
-                  <RadioButton
-                    isSelected={isWatched}
-                    onPress={() => setIsWatched(!isWatched)}
-                  />
-                </View>
+                  {selectedMovie ? selectedMovie.overview : "N/A"}
+                </Text>
                 <View
                   style={{
+                    flexDirection: "row",
                     alignItems: "center",
+                    marginTop: 10,
                   }}
                 >
-                  <Text style={{ marginBottom: 5 }}>Watch List</Text>
-                  <RadioButton
-                    isSelected={toWatch}
-                    onPress={() => setToWatch(!toWatch)}
-                  />
+                  <View
+                    style={{
+                      alignItems: "center",
+                      marginRight: 20,
+                    }}
+                  >
+                    <Text style={{ marginBottom: 5 }}>Watched</Text>
+                    <RadioButton
+                      isSelected={isWatched}
+                      onPress={() => setIsWatched(!isWatched)}
+                    />
+                  </View>
+                  <View
+                    style={{
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text style={{ marginBottom: 5 }}>Watch List</Text>
+                    <RadioButton
+                      isSelected={toWatch}
+                      onPress={() => setToWatch(!toWatch)}
+                    />
+                  </View>
                 </View>
+                <Rating
+                  imageSize={30}
+                  showRating={true}
+                  fractions={1}
+                  startingValue={rating}
+                  onFinishRating={setRating}
+                  style={{ marginTop: 10 }}
+                ></Rating>
+                <TextInput
+                  onChangeText={setReviewText}
+                  value={reviewText}
+                  style={{
+                    height: 100,
+                    width: "100%",
+                    borderColor: "gray",
+                    borderWidth: 1,
+                    marginTop: 30,
+                    padding: 10,
+                  }}
+                  multiline={true}
+                  textAlignVertical={"top"}
+                ></TextInput>
               </View>
-              <Rating
-                imageSize={30}
-                showRating={true}
-                fractions={1}
-                startingValue={rating}
-                onFinishRating={setRating}
-                style={{ marginTop: 10 }}
-              ></Rating>
-              <TextInput
-                placeholder={defaultReviewText}
-                onChangeText={setReviewText}
-                value={reviewText}
-                style={{
-                  height: 100,
-                  width: 200,
-                  borderColor: "gray",
-                  borderWidth: 1,
-                  marginTop: 10,
-                  padding: 10,
-                  textAlignVertical: "top",
+              <Image
+                style={styles.poster}
+                source={{
+                  uri: `https://image.tmdb.org/t/p/w500${selectedMovie?.poster_path}`,
                 }}
-              ></TextInput>
+              />
             </View>
-            <Image source={moviePoster} style={styles.poster}></Image>
-          </View>
-          <Pressable
-            style={[styles.button]}
-            onPress={() => setRightTabVisible(false)}
-          >
-            <Text>Close</Text>
-          </Pressable>
+            <View
+              style={{
+                justifyContent: "center",
+                alignContent: "center",
+                alignItems: "center",
+                flexDirection: "row",
+              }}
+            >
+              <Pressable
+                style={styles.button}
+                onPress={() => setRightTabVisible(false)}
+              >
+                <Text>Close</Text>
+              </Pressable>
+              <Pressable
+                disabled={!selectedMovie}
+                style={{ ...styles.button, marginLeft: 20 }}
+                onPress={() => {
+                  if (!selectedMovie) return;
+
+                  submitReview({
+                    movieId: selectedMovie.id,
+                  });
+                }}
+              >
+                <Text>Submit</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
         </View>
       )}
     </View>
@@ -187,8 +270,8 @@ const styles = StyleSheet.create({
     fontSize: 18, // Font size for the text
   },
   poster: {
-    height: 500,
-    width: 250,
+    height: 300,
+    width: 150,
     resizeMode: "contain",
   },
   button: {

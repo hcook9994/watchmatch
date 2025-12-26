@@ -1,23 +1,34 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Button,
   Text,
   View,
   Image,
   StyleSheet,
   TouchableHighlight,
 } from "react-native";
-import { Movie } from "../types";
-import { sampleData } from "../sampleData";
+import { Movie } from "../../../watchmatch-be/connectors/tmdb";
+import { getPopularMovies } from "../api";
+
+let movieOptions: any[] = [];
 
 export default function ReccomendationScreen() {
   // State to manage selected movie
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>();
-  // Importing a sample movie poster image
-  const moviePoster = require(`./../Qak6WgQOSX-cJatV9PnxVQ.png`);
+
+  useEffect(() => {
+    const queryPopularMovies = async () => {
+      const defaultResults = await getPopularMovies();
+      movieOptions = defaultResults.data.data;
+      return;
+    };
+
+    queryPopularMovies();
+  }, []);
 
   const generateMovieReccomendations = () => {
-    setSelectedMovie(sampleData[Math.floor(Math.random() * sampleData.length)]);
+    setSelectedMovie(
+      movieOptions[Math.floor(Math.random() * movieOptions.length)]
+    );
   };
 
   return (
@@ -54,14 +65,23 @@ export default function ReccomendationScreen() {
         </TouchableHighlight>
       </View>
       {selectedMovie && (
-        <View style={{ marginTop: 30 }}>
-          <Text style={{ fontSize: 24, fontWeight: "bold" }}>
-            {selectedMovie.title}
-          </Text>
-          <Text style={{ fontSize: 18, marginTop: 10 }}>
-            {selectedMovie.director}
-          </Text>
-          <Image source={moviePoster} style={styles.poster}></Image>
+        <View style={{ marginTop: 30, flexDirection: "row" }}>
+          <View style={{ width: "60%" }}>
+            <Text style={{ fontSize: 24, fontWeight: "bold" }}>
+              {selectedMovie.title}
+            </Text>
+            <Text style={{ fontSize: 18, marginTop: 10 }}>
+              {selectedMovie.overview}
+            </Text>
+          </View>
+          <View style={{ marginLeft: 30 }}>
+            <Image
+              source={{
+                uri: `https://image.tmdb.org/t/p/w500${selectedMovie?.poster_path}`,
+              }}
+              style={styles.poster}
+            ></Image>
+          </View>
         </View>
       )}
     </View>
