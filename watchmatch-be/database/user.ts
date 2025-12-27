@@ -17,15 +17,19 @@ const zUser = z.object({
 type User = z.infer<typeof zUser>;
 
 // Create a new user
-export const createUserDB = async (
-  username: string,
-  email: string,
-  password: string
-) => {
+export const createUserDB = async (input: {
+  username: string;
+  email: string;
+  password: string;
+}) => {
   try {
     const insertUser =
       "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *";
-    const result = await pool.query(insertUser, [username, email, password]);
+    const result = await pool.query(insertUser, [
+      input.username,
+      input.email,
+      input.password,
+    ]);
     const createdUser = result.rows[0];
     console.log("User created:", createdUser);
   } catch (err) {

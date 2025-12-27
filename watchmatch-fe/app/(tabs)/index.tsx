@@ -12,14 +12,25 @@ import {
 import { RadioButton } from "../components/radioButtonComponent";
 import { Rating } from "react-native-elements";
 import { SearchBarComponent } from "../components/searchBarComponent";
-import { getPopularMovies, searchMovies } from "../api";
+import {
+  getMovieLinkInfo,
+  getPopularMovies,
+  reviewMovie,
+  searchMovies,
+  watchlist,
+} from "../api";
 import { Movie } from "../../../watchmatch-be/connectors/tmdb";
 import alert from "../../helper/alert";
+import { useAuth } from "../contexts/authContext";
 
 // Default review text
+// TODO: change this so that it isn't actually text
 const defaultReviewText = "Write your review here...";
 
 export default function MovieSearchScreen() {
+  // Auth context for global variables
+  const { userId } = useAuth();
+
   // State to manage the filtered data and search input
   const [data, setData] = useState<Movie[]>([]);
   // State to manage the search input value
@@ -37,9 +48,15 @@ export default function MovieSearchScreen() {
   // State to manage the review of the movie
   const [reviewText, setReviewText] = useState(defaultReviewText);
 
-  function submitReview(inputs: { movieId: number }) {
-    // TODO: Check user is loggedIn
-
+  // TODO: handle watchlist AND reviewed conditions/overlap better
+  // TODO: handle updates/deletions better, i.e. how to remove/edit a review
+  async function submitReview(inputs: { tmdbMovieId: number }) {
+    if (!userId) {
+      setTimeout(() => {
+        alert("Invalid review", "Must be logged in to review a movie", []);
+      }, 100);
+      return;
+    }
     // If movie is watched, the assert values
     if (isWatched) {
       // Movie needs rating for models
@@ -54,13 +71,52 @@ export default function MovieSearchScreen() {
         return;
       }
       // Call first API - watched
-    } else {
-      if (!rating) {
-        alert("Invalid selection", "No valid inputs provided.", []);
-        return;
-      }
-      // Call second API - watchlist
+      await reviewMovie({
+        starRating: rating,
+        textReview: reviewText, //TODO: make naming consistent here
+        tmdbMovieId: inputs.tmdbMovieId,
+        userId,
+        // TODO: add watchDate
+      });
     }
+
+    // Call second API - watchlist
+    // Always call watchlist, in case it is being removes
+    await watchlist({
+      tmdbMovieId: inputs.tmdbMovieId,
+      toWatch: toWatch,
+      userId,
+    });
+  }
+
+  async function handleSelectMovie(tmdbMovieId: number) {
+    if (userId) {
+      const apiResponse = await getMovieLinkInfo({
+        tmdbMovieId,
+        userId,
+      });
+      if (apiResponse.status === 200) {
+        const movieInfo = apiResponse.data;
+        if (movieInfo && movieInfo.status !== "NOLINK") {
+          console.log("Set info from database");
+          setIsWatched(
+            movieInfo?.status === "REVIEWED" ||
+              movieInfo?.status === "WATCHLISTANDREVIEWED"
+          );
+          setToWatch(
+            movieInfo?.status === "WATCHLIST" ||
+              movieInfo?.status === "WATCHLISTANDREVIEWED"
+          );
+          setRating(movieInfo?.starRating ?? 0);
+          setReviewText(movieInfo?.textReview ?? defaultReviewText);
+          return;
+        }
+      }
+    }
+    setIsWatched(false);
+    setToWatch(false);
+    setRating(0);
+    setReviewText(defaultReviewText);
   }
 
   // Query TMDB to get searched movies or popular movies
@@ -110,23 +166,32 @@ export default function MovieSearchScreen() {
             <TouchableHighlight
               key={item.id}
               onPress={() => {
+                // Ensure right tab is visible
                 setRightTabVisible(true);
+                // Set selected movie
                 setSelectedMovie(item);
-                setIsWatched(false);
-                setToWatch(false);
-                setRating(0);
-                setReviewText(defaultReviewText);
+                // Handle selected movie
+                handleSelectMovie(item.id);
               }}
             >
               <View style={styles.item}>
                 <Text style={styles.itemText}>{item.title}</Text>
+                <Text
+                  style={{
+                    ...styles.itemText,
+                    marginTop: 5,
+                    fontSize: 12, // Font size for the text
+                  }}
+                >
+                  Release Date: {item.release_date}
+                </Text>
               </View>
             </TouchableHighlight>
           ))}
         </ScrollView>
       </View>
 
-      {rightTabVisible && (
+      {rightTabVisible && selectedMovie && (
         <View style={styles.rightTab}>
           <ScrollView>
             <View
@@ -144,7 +209,18 @@ export default function MovieSearchScreen() {
                 }}
               >
                 <Text style={{ fontSize: 20, marginBottom: 20 }}>
-                  {selectedMovie ? `${selectedMovie.title}` : "N/A"}
+                  {selectedMovie.title}
+                </Text>
+                <Text
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    fontSize: 14,
+                    padding: 10,
+                  }}
+                >
+                  <Text style={{ fontWeight: "bold" }}>Release Date: </Text>{" "}
+                  {selectedMovie.release_date}
                 </Text>
                 <Text
                   style={{
@@ -153,7 +229,7 @@ export default function MovieSearchScreen() {
                     padding: 10,
                   }}
                 >
-                  {selectedMovie ? selectedMovie.overview : "N/A"}
+                  {selectedMovie.overview}
                 </Text>
                 <View
                   style={{
@@ -231,13 +307,17 @@ export default function MovieSearchScreen() {
                 <Text>Close</Text>
               </Pressable>
               <Pressable
-                disabled={!selectedMovie}
-                style={{ ...styles.button, marginLeft: 20 }}
-                onPress={() => {
+                disabled={!selectedMovie || !userId}
+                style={{
+                  ...styles.button,
+                  marginLeft: 20,
+                  backgroundColor: userId === null ? "grey" : "lightgreen",
+                }}
+                onPress={async () => {
                   if (!selectedMovie) return;
 
-                  submitReview({
-                    movieId: selectedMovie.id,
+                  await submitReview({
+                    tmdbMovieId: selectedMovie.id,
                   });
                 }}
               >

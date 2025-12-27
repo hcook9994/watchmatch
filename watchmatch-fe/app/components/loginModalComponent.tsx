@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { login } from "../api";
 import { CreateUserModal } from "./createUserModalComponent";
+import { useAuth } from "../contexts/authContext";
 
 type Props = {
   loginScreen: boolean;
@@ -16,18 +17,13 @@ type Props = {
   setLoggedIn: (loggedIn: boolean) => void;
   username: string;
   setUsername: (username: string) => void;
-  setUserId: (userId: string) => void;
 };
 
 const LoginModal = (props: Props) => {
-  const {
-    loginScreen,
-    exitLoginScreen,
-    setLoggedIn,
-    username,
-    setUsername,
-    setUserId,
-  } = props;
+  const { setUserId } = useAuth();
+
+  const { loginScreen, exitLoginScreen, setLoggedIn, username, setUsername } =
+    props;
 
   const [password, setPassword] = useState("");
 

@@ -2,7 +2,7 @@ import z from "zod";
 import pool from "../postgres.js";
 import type { QueryResult } from "pg";
 
-const zWatchInfo = z.object({
+const zMovieLink = z.object({
   movie_link_id: z.number(), //unique link between movie and user
   tmdb_movie_id: z.number(), //link to tmdb external database
   //TODO: consider omdb id also?
@@ -10,18 +10,25 @@ const zWatchInfo = z.object({
   created_at: z.date(),
 });
 
-type WatchInfo = z.infer<typeof zWatchInfo>;
+type MovieLink = z.infer<typeof zMovieLink>;
 
 // Create a movie link
-export const createMovieLink = async (tmdbMovieId: number, userId: number) => {
+export const createMovieLink = async (input: {
+  tmdbMovieId: number;
+  userId: number;
+}): Promise<MovieLink> => {
   try {
     const insertUser =
       "INSERT INTO movie_link (tmdb_movie_id, user_id) VALUES ($1, $2) RETURNING *";
-    const result = await pool.query(insertUser, [tmdbMovieId, userId]);
-    const createdUser = result.rows[0];
-    console.log("User created:", createdUser);
+    const result = await pool.query(insertUser, [
+      input.tmdbMovieId,
+      input.userId,
+    ]);
+    const createdMovieLink = result.rows[0];
+    console.log("User created:", createdMovieLink);
+    return createdMovieLink;
   } catch (err) {
-    console.error("Error creating user:", err);
+    console.error("Error creating movie link:", err);
     throw err;
   }
 };
@@ -29,7 +36,7 @@ export const createMovieLink = async (tmdbMovieId: number, userId: number) => {
 // Retrieve movie link by linkId
 export const getMovieLinkByLinkId = async (
   movieLinkId: number
-): Promise<WatchInfo | null> => {
+): Promise<MovieLink | null> => {
   try {
     const getMovieLinkQuery =
       "SELECT * FROM movie_link WHERE movie_link_id = $1";
@@ -42,13 +49,17 @@ export const getMovieLinkByLinkId = async (
 };
 
 // Retrieve movie link by linkId
-export const getMovieLinkByTmdbId = async (
-  tmdbId: number
-): Promise<WatchInfo | null> => {
+export const getMovieLinkByTmdbIdAndUserId = async (input: {
+  tmdbMovieId: number;
+  userId: number;
+}): Promise<MovieLink | null> => {
   try {
     const getMovieLinkQuery =
-      "SELECT * FROM movie_link WHERE tmdb_movie_id = $1";
-    const result = await pool.query(getMovieLinkQuery, [tmdbId]);
+      "SELECT * FROM movie_link WHERE tmdb_movie_id = $1 AND user_id = $2";
+    const result = await pool.query(getMovieLinkQuery, [
+      input.tmdbMovieId,
+      input.userId,
+    ]);
     return handlePSQLQueryOutput(result);
   } catch (err) {
     console.error("Error retrieving user:", err);
@@ -66,7 +77,7 @@ function handlePSQLQueryOutput(result: QueryResult<any>) {
     throw Error;
   }
 
-  const parsed = zWatchInfo.safeParse(result.rows[0]);
+  const parsed = zMovieLink.safeParse(result.rows[0]);
   if (!parsed.success) {
     console.error("Movie Link from database failed validation:", parsed.error);
     return null;

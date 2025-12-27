@@ -9,7 +9,7 @@ const zWatchlistInfo = z.object({
 type Watchlist = z.infer<typeof zWatchlistInfo>;
 
 // Create a new watch list
-export const createWatchListDB = async (movieLinkId: string) => {
+export const createWatchListDB = async (movieLinkId: number) => {
   try {
     const insertWatchList =
       "INSERT INTO watch_list (movie_link_id) VALUES ($1) RETURNING *";
@@ -22,8 +22,17 @@ export const createWatchListDB = async (movieLinkId: string) => {
   }
 };
 
+// Delete existing watch list
+export const deleteWatchListDB = async (movieLinkId: number) => {
+  const query = "DELETE FROM watch_list WHERE movie_link_id = $1";
+
+  const values = [movieLinkId];
+  await pool.query(query, values);
+  return;
+};
+
 // Retrieve watch list by movie link id
-export const getWatchlistByName = async (
+export const getWatchlistByMovieLinkId = async (
   movieLinkId: number
 ): Promise<Watchlist | null> => {
   try {
