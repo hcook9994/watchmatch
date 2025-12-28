@@ -4,13 +4,8 @@ import {
   Text,
   View,
   TouchableHighlight,
-  Pressable,
-  Image,
   ScrollView,
-  TextInput,
 } from "react-native";
-import { RadioButton } from "../components/radioButtonComponent";
-import { Rating } from "react-native-elements";
 import { SearchBarComponent } from "../components/searchBarComponent";
 import {
   getMovieLinkInfo,
@@ -19,9 +14,10 @@ import {
   searchMovies,
   watchlist,
 } from "../api";
-import { Movie } from "../../../watchmatch-be/connectors/tmdb";
 import alert from "../../helper/alert";
 import { useAuth } from "../contexts/authContext";
+import { Movie } from "../../../watchmatch-be/types/tmdb";
+import { MovieReviewPanel } from "../components/rightTabMovieInfo";
 
 // Default review text
 // TODO: change this so that it isn't actually text
@@ -98,7 +94,6 @@ export default function MovieSearchScreen() {
       if (apiResponse.status === 200) {
         const movieInfo = apiResponse.data;
         if (movieInfo && movieInfo.status !== "NOLINK") {
-          console.log("Set info from database");
           setIsWatched(
             movieInfo?.status === "REVIEWED" ||
               movieInfo?.status === "WATCHLISTANDREVIEWED"
@@ -161,6 +156,7 @@ export default function MovieSearchScreen() {
           setData={setData} // Function to update filtered data
           setSearchValue={setSearchValue} // Function to update search value
         />
+        {/* Turn into a flatlist */}
         <ScrollView>
           {data.map((item) => (
             <TouchableHighlight
@@ -190,143 +186,24 @@ export default function MovieSearchScreen() {
           ))}
         </ScrollView>
       </View>
-
-      {rightTabVisible && selectedMovie && (
-        <View style={styles.rightTab}>
-          <ScrollView>
-            <View
-              style={{
-                flexDirection: "row",
-                marginBottom: 20,
-              }}
-            >
-              <View
-                style={{
-                  marginRight: 80,
-                  width: "50%",
-                  alignItems: "center",
-                  alignContent: "center",
-                }}
-              >
-                <Text style={{ fontSize: 20, marginBottom: 20 }}>
-                  {selectedMovie.title}
-                </Text>
-                <Text
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    fontSize: 14,
-                    padding: 10,
-                  }}
-                >
-                  <Text style={{ fontWeight: "bold" }}>Release Date: </Text>{" "}
-                  {selectedMovie.release_date}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    marginBottom: 10,
-                    padding: 10,
-                  }}
-                >
-                  {selectedMovie.overview}
-                </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginTop: 10,
-                  }}
-                >
-                  <View
-                    style={{
-                      alignItems: "center",
-                      marginRight: 20,
-                    }}
-                  >
-                    <Text style={{ marginBottom: 5 }}>Watched</Text>
-                    <RadioButton
-                      isSelected={isWatched}
-                      onPress={() => setIsWatched(!isWatched)}
-                    />
-                  </View>
-                  <View
-                    style={{
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={{ marginBottom: 5 }}>Watch List</Text>
-                    <RadioButton
-                      isSelected={toWatch}
-                      onPress={() => setToWatch(!toWatch)}
-                    />
-                  </View>
-                </View>
-                <Rating
-                  imageSize={30}
-                  showRating={true}
-                  fractions={1}
-                  startingValue={rating}
-                  onFinishRating={setRating}
-                  style={{ marginTop: 10 }}
-                ></Rating>
-                <TextInput
-                  onChangeText={setReviewText}
-                  value={reviewText}
-                  style={{
-                    height: 100,
-                    width: "100%",
-                    borderColor: "gray",
-                    borderWidth: 1,
-                    marginTop: 30,
-                    padding: 10,
-                  }}
-                  multiline={true}
-                  textAlignVertical={"top"}
-                ></TextInput>
-              </View>
-              <Image
-                style={styles.poster}
-                source={{
-                  uri: `https://image.tmdb.org/t/p/w500${selectedMovie?.poster_path}`,
-                }}
-              />
-            </View>
-            <View
-              style={{
-                justifyContent: "center",
-                alignContent: "center",
-                alignItems: "center",
-                flexDirection: "row",
-              }}
-            >
-              <Pressable
-                style={styles.button}
-                onPress={() => setRightTabVisible(false)}
-              >
-                <Text>Close</Text>
-              </Pressable>
-              <Pressable
-                disabled={!selectedMovie || !userId}
-                style={{
-                  ...styles.button,
-                  marginLeft: 20,
-                  backgroundColor: userId === null ? "grey" : "lightgreen",
-                }}
-                onPress={async () => {
-                  if (!selectedMovie) return;
-
-                  await submitReview({
-                    tmdbMovieId: selectedMovie.id,
-                  });
-                }}
-              >
-                <Text>Submit</Text>
-              </Pressable>
-            </View>
-          </ScrollView>
-        </View>
-      )}
+      {/* Movie Panel Only Visible When Movie is selected */}
+      <MovieReviewPanel
+        visible={rightTabVisible}
+        movie={selectedMovie ?? null}
+        isWatched={isWatched}
+        setIsWatched={setIsWatched}
+        toWatch={toWatch}
+        setToWatch={setToWatch}
+        rating={rating}
+        setRating={setRating}
+        reviewText={reviewText}
+        setReviewText={setReviewText}
+        onClose={() => setRightTabVisible(false)}
+        onSubmit={async () => {
+          if (!selectedMovie) return;
+          await submitReview({ tmdbMovieId: selectedMovie.id });
+        }}
+      />
     </View>
   );
 }
@@ -348,31 +225,5 @@ const styles = StyleSheet.create({
   itemText: {
     color: "white", // Text color
     fontSize: 18, // Font size for the text
-  },
-  poster: {
-    height: 300,
-    width: 150,
-    resizeMode: "contain",
-  },
-  button: {
-    borderRadius: 20,
-    padding: 10,
-    elevation: 2,
-    backgroundColor: "lightgreen",
-    marginTop: 5,
-    width: "20%",
-    alignItems: "center",
-  },
-  rightTab: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    width: "50%",
-    height: "100%",
-    backgroundColor: "white",
-    borderLeftWidth: 1,
-    borderLeftColor: "#ccc",
-    padding: 16,
-    alignItems: "center",
   },
 });

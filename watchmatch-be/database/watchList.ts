@@ -1,15 +1,20 @@
 import z from "zod";
 import pool from "../postgres.js";
+import psqlHelper from "./psqlHelper.js";
 
-const zWatchlistInfo = z.object({
+//TODO: consolidate watchlist as one word
+
+const zWatchlist = z.object({
   movie_link_id: z.number(),
   created_at: z.date(),
 });
 
-type Watchlist = z.infer<typeof zWatchlistInfo>;
+export type Watchlist = z.infer<typeof zWatchlist>;
+
+const zWatchlistList = z.array(zWatchlist);
 
 // Create a new watch list
-export const createWatchListDB = async (movieLinkId: number) => {
+const createWatchListDB = async (movieLinkId: number) => {
   try {
     const insertWatchList =
       "INSERT INTO watch_list (movie_link_id) VALUES ($1) RETURNING *";
@@ -23,7 +28,7 @@ export const createWatchListDB = async (movieLinkId: number) => {
 };
 
 // Delete existing watch list
-export const deleteWatchListDB = async (movieLinkId: number) => {
+const deleteWatchListDB = async (movieLinkId: number) => {
   const query = "DELETE FROM watch_list WHERE movie_link_id = $1";
 
   const values = [movieLinkId];
@@ -32,7 +37,7 @@ export const deleteWatchListDB = async (movieLinkId: number) => {
 };
 
 // Retrieve watch list by movie link id
-export const getWatchlistByMovieLinkId = async (
+const getWatchlistByMovieLinkId = async (
   movieLinkId: number
 ): Promise<Watchlist | null> => {
   try {
@@ -40,26 +45,39 @@ export const getWatchlistByMovieLinkId = async (
       "SELECT * FROM watch_list WHERE movie_link_id = $1";
     const result = await pool.query(getWatchlistQuery, [movieLinkId]);
 
-    if (result.rows.length === 0) {
-      console.log("Watch list not found");
-      return null;
-    } else if (result.rows.length > 1) {
-      console.warn("Multiple watch lists found with the same watch listname");
-    }
-
-    const parsed = zWatchlistInfo.safeParse(result.rows[0]);
-    if (!parsed.success) {
-      console.error(
-        "Watch list from database failed validation:",
-        parsed.error
-      );
-      return null;
-    }
-    const validatedWatchlist = parsed.data;
-
-    return validatedWatchlist;
+    return psqlHelper.handleSinglePSQLQueryOutput({
+      result,
+      zodvalidator: zWatchlist,
+      datatype: "Watch List",
+    });
   } catch (err) {
     console.error("Error retrieving watch list:", err);
     throw err;
   }
+};
+
+// Retrieve watch list by movie link id
+const getWatchlistByUserId = async (
+  userId: number
+): Promise<Watchlist[] | null> => {
+  try {
+    const getWatchlistQuery = "SELECT * FROM watch_list WHERE user_id = $1";
+    const result = await pool.query(getWatchlistQuery, [userId]);
+
+    return psqlHelper.handleMultiplePSQLQueryOutput({
+      result,
+      zodvalidator: zWatchlistList,
+      datatype: "Watch List",
+    });
+  } catch (err) {
+    console.error("Error retrieving watch list:", err);
+    throw err;
+  }
+};
+
+export default {
+  createWatchListDB,
+  deleteWatchListDB,
+  getWatchlistByMovieLinkId,
+  getWatchlistByUserId,
 };

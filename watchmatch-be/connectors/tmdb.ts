@@ -1,47 +1,30 @@
 import z from "zod";
 import { tmdbAccessToken, tmdbAPIKey } from "../tmdb.js";
+import {
+  zMovieApiResult,
+  zMovieDeepInfo,
+  type Movie,
+  type MovieDeepInfo,
+} from "../types/tmdb.js";
 
 //TODO: move these types into their own files
 
-export const zMovie = z.object({
-  adult: z.boolean(),
-  backdrop_path: z.string().nullable(), // TMDB can return null
-  genre_ids: z.array(z.number()),
-  id: z.number(),
-  original_language: z.string(),
-  original_title: z.string(),
-  overview: z.string(),
-  popularity: z.number(),
-  poster_path: z.string().nullable(), // can be null
-  release_date: z.string(), // ISO date string (YYYY-MM-DD)
-  title: z.string(),
-  video: z.boolean(),
-  vote_average: z.number(),
-  vote_count: z.number(),
-});
-
-export type Movie = z.infer<typeof zMovie>;
-
-export const zMovieApiResult = z.array(zMovie);
-
-export async function popularMoviesQuery(): Promise<Movie[] | null> {
+async function popularMoviesQuery(): Promise<Movie[] | null> {
   const popularMovieApiResp = await fetch(
     `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbAPIKey}`
   );
-  const movieResponse = await popularMovieApiResp.json();
-  const validatedMovieList = zMovieApiResult.safeParse(movieResponse.results);
-  if (!validatedMovieList.success) {
-    console.error(
-      "User from database failed validation:",
-      validatedMovieList.error
-    );
-    return null;
+  const validatedApiResponse = await validateApiResponse(
+    popularMovieApiResp,
+    zMovieApiResult
+  );
+  if (validatedApiResponse) {
+    return validatedApiResponse?.results;
   }
-  const validatedResponse = validatedMovieList.data;
-  return validatedResponse;
+  console.error("popularMoviesQuery tmdb api failed");
+  return null;
 }
 
-export async function searchMovieString(
+async function searchMovieString(
   searchString: string
 ): Promise<Movie[] | null> {
   const searchMovieApiResp = await fetch(
@@ -53,19 +36,48 @@ export async function searchMovieString(
       },
     }
   );
-  const searchResponse = await searchMovieApiResp.json();
-  const validatedSearchResponse = zMovieApiResult.safeParse(
-    searchResponse.results
+  const validatedApiResponse = await validateApiResponse(
+    searchMovieApiResp,
+    zMovieApiResult
   );
-  if (!validatedSearchResponse.success) {
-    console.error(
-      "User from database failed validation:",
-      validatedSearchResponse.error
-    );
+  if (validatedApiResponse) {
+    return validatedApiResponse?.results;
+  }
+  console.error("searchMovieString tmdb api failed");
+  return null;
+}
+
+async function getMovieInfo(
+  tmdbMovieId: number
+): Promise<MovieDeepInfo | null> {
+  const getMovieApiResp = await fetch(
+    `https://api.themoviedb.org/3/movie/${tmdbMovieId}?language=en-US`,
+    {
+      headers: {
+        Authorization: `Bearer ${tmdbAccessToken}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  return validateApiResponse(getMovieApiResp, zMovieDeepInfo);
+}
+
+async function validateApiResponse<T>(
+  apiResponse: Response,
+  zodValidator: z.ZodType<T>
+): Promise<T | null> {
+  const jsonApiResponse = await apiResponse.json();
+  const validatedApiResponse = zodValidator.safeParse(jsonApiResponse);
+  if (!validatedApiResponse.success) {
+    console.error("Api type failed validation:", validatedApiResponse.error);
     return null;
   }
-  const validatedResponse = validatedSearchResponse.data;
+  const validatedResponse = validatedApiResponse.data;
   return validatedResponse;
 }
 
-//TODO: consider exporting a class and calling the function like that
+export default {
+  popularMoviesQuery,
+  searchMovieString,
+  getMovieInfo,
+};

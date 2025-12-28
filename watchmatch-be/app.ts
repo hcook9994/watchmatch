@@ -1,12 +1,9 @@
 import express from "express";
 import cors from "cors";
-import { createUser, loginAuthentication } from "./domain/user.js";
-import { getPopularMovies, searchMovie } from "./domain/tmdb.js";
-import {
-  getAllMovieLinkInfo,
-  movieReviewHelper,
-  watchlistHelper,
-} from "./domain/movie.js";
+import userDBController from "./domain/user.js";
+import tmdbController from "./domain/tmdb.js";
+import movieController from "./domain/movie.js";
+import tmdb from "./connectors/tmdb.js";
 
 const app = express();
 const port = 3000;
@@ -16,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 app.post("/login", async (req, res) => {
-  const response = await loginAuthentication({
+  const response = await userDBController.loginAuthentication({
     username: req.body.username,
     password: req.body.password,
   });
@@ -34,7 +31,7 @@ app.post("/login", async (req, res) => {
 });
 
 app.post("/create_user", async (req, res) => {
-  await createUser({
+  await userDBController.createUser({
     username: req.body.username,
     email: req.body.email,
     password: req.body.password,
@@ -45,7 +42,7 @@ app.post("/create_user", async (req, res) => {
 });
 
 app.get("/popular_movies", async (req, res) => {
-  const popularMovieList = await getPopularMovies();
+  const popularMovieList = await tmdbController.getPopularMovies();
   res.contentType("application/json");
   res.status(200);
   res.send(
@@ -65,7 +62,7 @@ app.get("/search_movies", async (req, res) => {
     });
   }
 
-  const searchMovieList = await searchMovie(searchString);
+  const searchMovieList = await tmdbController.searchMovie(searchString);
   res.contentType("application/json");
   res.status(200);
   res.send(
@@ -74,7 +71,7 @@ app.get("/search_movies", async (req, res) => {
 });
 
 app.post("/watchlist", async (req, res) => {
-  await watchlistHelper({
+  await movieController.watchlistHelper({
     tmdbMovieId: req.body.tmdb_movie_id,
     toWatch: req.body.to_watch,
     userId: req.body.user_id,
@@ -85,7 +82,7 @@ app.post("/watchlist", async (req, res) => {
 });
 
 app.post("/review", async (req, res) => {
-  await movieReviewHelper({
+  await movieController.movieReviewHelper({
     starRating: req.body.star_rating,
     tmdbMovieId: req.body.tmdb_movie_id,
     userId: req.body.user_id,
@@ -105,7 +102,7 @@ app.get("/movie_info", async (req, res) => {
       message: "User and Movie Id query parameter is required",
     });
   }
-  const movieInfo = await getAllMovieLinkInfo({
+  const movieInfo = await movieController.getAllMovieLinkInfo({
     tmdbMovieId,
     userId,
   });
@@ -113,6 +110,36 @@ app.get("/movie_info", async (req, res) => {
   res.status(200);
   res.send(
     JSON.stringify({ data: movieInfo, message: "Movie query successful" })
+  );
+});
+
+app.get("/watchlist", async (req, res) => {
+  const userId = Number(req.query.user_id);
+  if (!userId) {
+    return res.status(400).json({
+      message: "User Id query parameter is required",
+    });
+  }
+  const watchlistList = await movieController.getWatchListInfoByUserId(userId);
+  res.contentType("application/json");
+  res.status(200);
+  res.send(
+    JSON.stringify({ data: watchlistList, message: "Movie query successful" })
+  );
+});
+
+app.get("/diary", async (req, res) => {
+  const userId = Number(req.query.user_id);
+  if (!userId) {
+    return res.status(400).json({
+      message: "User Id query parameter is required",
+    });
+  }
+  const diaryList = await movieController.getDiaryByUserId(userId);
+  res.contentType("application/json");
+  res.status(200);
+  res.send(
+    JSON.stringify({ data: diaryList, message: "Movie query successful" })
   );
 });
 

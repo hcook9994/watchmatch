@@ -6,8 +6,8 @@ import {
   StyleSheet,
   TouchableHighlight,
 } from "react-native";
-import { Movie } from "../../../watchmatch-be/connectors/tmdb";
 import { getPopularMovies } from "../api";
+import { Movie } from "../../../watchmatch-be/types/tmdb";
 
 let movieOptions: any[] = [];
 

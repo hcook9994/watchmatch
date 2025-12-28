@@ -1,5 +1,6 @@
 import pool from "../postgres.js";
 import { z } from "zod";
+import psqlHelper from "./psqlHelper.js";
 
 // TODO: add password handling
 // TODO: add uuid userId (can it replace existing id field?)
@@ -44,21 +45,11 @@ export const getUserByName = async (username: string): Promise<User | null> => {
     const getUserQuery = "SELECT * FROM users WHERE username = $1";
     const result = await pool.query(getUserQuery, [username]);
 
-    if (result.rows.length === 0) {
-      console.log("User not found");
-      return null;
-    } else if (result.rows.length > 1) {
-      console.warn("Multiple users found with the same username");
-    }
-
-    const parsed = zUser.safeParse(result.rows[0]);
-    if (!parsed.success) {
-      console.error("User from database failed validation:", parsed.error);
-      return null;
-    }
-    const validatedUser = parsed.data;
-
-    return validatedUser;
+    return psqlHelper.handleSinglePSQLQueryOutput({
+      result,
+      zodvalidator: zUser,
+      datatype: "User",
+    });
   } catch (err) {
     console.error("Error retrieving user:", err);
     throw err;

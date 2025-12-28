@@ -1,5 +1,6 @@
 import z from "zod";
 import pool from "../postgres.js";
+import psqlHelper from "./psqlHelper.js";
 
 const zWatchInfo = z.object({
   movie_link_id: z.number(), //unique link between
@@ -11,8 +12,10 @@ const zWatchInfo = z.object({
 
 type WatchInfo = z.infer<typeof zWatchInfo>;
 
+const zWatchInfoList = z.array(zWatchInfo);
+
 // Create a new watch info
-export const createWatchInfo = async (input: {
+const createWatchInfo = async (input: {
   movieLinkId: number;
   starRating: number;
   watchDate?: Date | undefined;
@@ -36,7 +39,7 @@ export const createWatchInfo = async (input: {
 };
 
 // Update existing watch info
-export const updateWatchInfo = async (input: {
+const updateWatchInfo = async (input: {
   movieLinkId: number;
   starRating: number;
   watchDate?: Date | undefined;
@@ -65,7 +68,7 @@ export const updateWatchInfo = async (input: {
 };
 
 // Retrieve watch info by movie link id
-export const getWatchInfoByMovieLinkId = async (
+const getWatchInfoByMovieLinkId = async (
   movieLinkId: number
 ): Promise<WatchInfo | null> => {
   try {
@@ -73,26 +76,19 @@ export const getWatchInfoByMovieLinkId = async (
       "SELECT * FROM watch_info WHERE movie_link_id = $1";
     const result = await pool.query(getWatchInfoQuery, [movieLinkId]);
 
-    if (result.rows.length === 0) {
-      console.log("Watch Info not found");
-      return null;
-    } else if (result.rows.length > 1) {
-      console.warn("Multiple watch infos found with the same movie link id");
-    }
-
-    const parsed = zWatchInfo.safeParse(result.rows[0]);
-    if (!parsed.success) {
-      console.error(
-        "Watch info from database failed validation:",
-        parsed.error
-      );
-      return null;
-    }
-    const validatedWatchInfo = parsed.data;
-
-    return validatedWatchInfo;
+    return psqlHelper.handleSinglePSQLQueryOutput({
+      result,
+      zodvalidator: zWatchInfo,
+      datatype: "Watch Info",
+    });
   } catch (err) {
     console.error("Error retrieving watch info:", err);
     throw err;
   }
+};
+
+export default {
+  createWatchInfo,
+  updateWatchInfo,
+  getWatchInfoByMovieLinkId,
 };

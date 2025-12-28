@@ -1,6 +1,6 @@
 import { createUserDB, getUserByName } from "../database/user.js";
 
-export async function createUser(input: {
+async function createUser(input: {
   username: string;
   email: string;
   password: string;
@@ -8,7 +8,7 @@ export async function createUser(input: {
   await createUserDB(input);
 }
 
-export async function loginAuthentication(input: {
+async function loginAuthentication(input: {
   username: string;
   password: string;
 }): Promise<{ status: false } | { status: true; userId: number }> {
@@ -23,3 +23,8 @@ export async function loginAuthentication(input: {
     return { status: false };
   }
 }
+
+export default {
+  createUser,
+  loginAuthentication,
+};

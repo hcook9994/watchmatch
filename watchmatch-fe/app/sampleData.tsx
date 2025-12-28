@@ -1,6 +1,4 @@
-import { Movie } from "./types";
-
-const sampleData: Movie[] = [
+const sampleData = [
   {
     id: "1",
     title: "Reservoir Dogs",

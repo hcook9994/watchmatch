@@ -1,7 +1,9 @@
-//TODO: reformat these functions
+// TODO: reformat these functions
 // TODO: add proper return types
 // TODO: remove duplicated code
-import { MovieLinkInfo } from "../../watchmatch-be/domain/movie";
+// TODO: make a controller
+import { DiaryInfo, MovieLinkInfo } from "../../watchmatch-be/domain/movie";
+import { MovieDeepInfo } from "../../watchmatch-be/types/tmdb";
 
 export async function createUser(
   username: string,
@@ -134,7 +136,6 @@ export async function reviewMovie(input: {
   textReview?: string;
   watchDate?: Date;
 }) {
-  console.log("calling reviewMovie API");
   try {
     const response = await fetch("http://localhost:3000/review/", {
       headers: {
@@ -187,3 +188,53 @@ export async function getMovieLinkInfo(input: {
     return { message: "Failed fetching from the API", status: 500 };
   }
 }
+
+export async function getWatchlist(userId: number) {
+  try {
+    const response = await fetch(
+      `http://localhost:3000/watchlist?user_id=${userId}`,
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      }
+    );
+
+    if (response.status === 200) {
+      const responseData = await response.json();
+      return { data: responseData.data as MovieDeepInfo[], status: 200 };
+    } else {
+      return { message: "The server denied our request.", status: 500 };
+    }
+  } catch (e) {
+    return { message: "Failed fetching from the API", status: 500 };
+  }
+}
+
+export async function getDiary(userId: number) {
+  try {
+    const response = await fetch(
+      `http://localhost:3000/diary?user_id=${userId}`,
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      }
+    );
+
+    if (response.status === 200) {
+      const responseData = await response.json();
+      return { data: responseData.data as DiaryInfo[], status: 200 };
+    } else {
+      return { message: "The server denied our request.", status: 500 };
+    }
+  } catch (e) {
+    return { message: "Failed fetching from the API", status: 500 };
+  }
+}
+
+//TODO: add helper function to remove duplicated code

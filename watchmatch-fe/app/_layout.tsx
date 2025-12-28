@@ -1,6 +1,6 @@
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import { useState } from "react";
-import { Text, View, TouchableHighlight } from "react-native";
+import { Text, View, TouchableHighlight, StyleSheet } from "react-native";
 import { LoginModal } from "./components/loginModalComponent";
 import { AuthProvider } from "./contexts/authContext";
 
@@ -20,19 +20,53 @@ export default function RootLayout() {
           name="(tabs)"
           options={{
             headerRight: () => (
-              <View>
+              <View
+                style={{
+                  flexDirection: "row",
+                }}
+              >
+                <TouchableHighlight
+                  onPress={() => router.push("/diary")}
+                  disabled={!loggedIn}
+                  style={{
+                    ...styles.button,
+                    backgroundColor: !loggedIn ? "grey" : "lightgreen",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      color: "black",
+                    }}
+                  >
+                    Diary
+                  </Text>
+                </TouchableHighlight>
+                <TouchableHighlight
+                  onPress={() => router.push("/watchlist")}
+                  disabled={!loggedIn}
+                  style={{
+                    ...styles.button,
+                    backgroundColor: !loggedIn ? "grey" : "lightgreen",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      color: "black",
+                    }}
+                  >
+                    Watchlist
+                  </Text>
+                </TouchableHighlight>
                 <TouchableHighlight
                   onPress={() => {
                     setLoginScreen(true);
                   }}
                   disabled={loggedIn}
                   style={{
-                    marginRight: 15,
+                    ...styles.button,
                     backgroundColor: loggedIn ? "grey" : "lightgreen",
-                    borderRadius: 20,
-                    padding: 10,
-                    width: 100,
-                    alignItems: "center",
                   }}
                 >
                   <Text
@@ -59,3 +93,14 @@ export default function RootLayout() {
     </AuthProvider>
   );
 }
+
+// Styles for the components
+const styles = StyleSheet.create({
+  button: {
+    marginRight: 15,
+    borderRadius: 20,
+    padding: 10,
+    width: 100,
+    alignItems: "center",
+  },
+});

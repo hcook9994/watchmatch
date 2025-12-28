@@ -1,6 +1,6 @@
 import z from "zod";
 import pool from "../postgres.js";
-import type { QueryResult } from "pg";
+import psqlHelper from "./psqlHelper.js";
 
 const zMovieLink = z.object({
   movie_link_id: z.number(), //unique link between movie and user
@@ -12,8 +12,10 @@ const zMovieLink = z.object({
 
 type MovieLink = z.infer<typeof zMovieLink>;
 
+const zMovieLinkList = z.array(zMovieLink);
+
 // Create a movie link
-export const createMovieLink = async (input: {
+const createMovieLink = async (input: {
   tmdbMovieId: number;
   userId: number;
 }): Promise<MovieLink> => {
@@ -34,14 +36,18 @@ export const createMovieLink = async (input: {
 };
 
 // Retrieve movie link by linkId
-export const getMovieLinkByLinkId = async (
+const getMovieLinkByLinkId = async (
   movieLinkId: number
 ): Promise<MovieLink | null> => {
   try {
     const getMovieLinkQuery =
       "SELECT * FROM movie_link WHERE movie_link_id = $1";
     const result = await pool.query(getMovieLinkQuery, [movieLinkId]);
-    return handlePSQLQueryOutput(result);
+    return psqlHelper.handleSinglePSQLQueryOutput({
+      result,
+      zodvalidator: zMovieLink,
+      datatype: "Movie Link",
+    });
   } catch (err) {
     console.error("Error retrieving user:", err);
     throw err;
@@ -49,7 +55,7 @@ export const getMovieLinkByLinkId = async (
 };
 
 // Retrieve movie link by linkId
-export const getMovieLinkByTmdbIdAndUserId = async (input: {
+const getMovieLinkByTmdbIdAndUserId = async (input: {
   tmdbMovieId: number;
   userId: number;
 }): Promise<MovieLink | null> => {
@@ -60,29 +66,39 @@ export const getMovieLinkByTmdbIdAndUserId = async (input: {
       input.tmdbMovieId,
       input.userId,
     ]);
-    return handlePSQLQueryOutput(result);
+    return psqlHelper.handleSinglePSQLQueryOutput({
+      result,
+      zodvalidator: zMovieLink,
+      datatype: "Movie Link",
+    });
   } catch (err) {
     console.error("Error retrieving user:", err);
     throw err;
   }
 };
 
-// PSQL Query handling
-function handlePSQLQueryOutput(result: QueryResult<any>) {
-  if (result.rows.length === 0) {
-    console.log("Movie Link not found");
-    return null;
-  } else if (result.rows.length > 1) {
-    console.warn("Multiple movie links found with the same link id");
-    throw Error;
+// Retrieve movie link by linkId
+const getMovieLinksByUserId = async (
+  userId: number
+): Promise<MovieLink[] | null> => {
+  try {
+    const getMovieLinkQuery = "SELECT * FROM movie_link WHERE user_id = $1 ";
+    const result = await pool.query(getMovieLinkQuery, [userId]);
+    return psqlHelper.handleMultiplePSQLQueryOutput({
+      result,
+      zodvalidator: zMovieLinkList,
+      datatype: "Movie Link",
+    });
+  } catch (err) {
+    console.error("Error retrieving user:", err);
+    throw err;
   }
+};
 
-  const parsed = zMovieLink.safeParse(result.rows[0]);
-  if (!parsed.success) {
-    console.error("Movie Link from database failed validation:", parsed.error);
-    return null;
-  }
-  const validatedMovieLink = parsed.data;
-
-  return validatedMovieLink;
-}
+//TODO: need to improve this so I can command click
+export default {
+  createMovieLink,
+  getMovieLinkByLinkId,
+  getMovieLinkByTmdbIdAndUserId,
+  getMovieLinksByUserId,
+};
